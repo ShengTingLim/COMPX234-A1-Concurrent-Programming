@@ -20,10 +20,24 @@ class Assignment1 {
         ArrayList<Thread> pThreads = new ArrayList<Thread>();
 
         // Create Machine and Printer threads
-        // Write code here
+        for (int i = 0; i < NUM_MACHINES; i++) {
+            machineThread m = new machineThread(i);
+            mThreads.add(m);
+        }
+
+        for (int i = 0; i < NUM_PRINTERS; i++) {
+            printerThread p = new printerThread(i);
+            pThreads.add(p);
+        }
 
         // start all the threads
-        // Write code here
+        for (Thread machine : mThreads) {
+            machine.start();
+        }
+
+        for (Thread printer : pThreads) {
+            printer.start();
+        }
 
         // let the simulation run for some time
         sleep(SIMULATION_TIME);
@@ -32,7 +46,13 @@ class Assignment1 {
         sim_active = false;
 
         // Wait until all printer threads finish by using the join function
-        // Write code here
+        for (Thread printer : pThreads) {
+            try {
+                printer.join();
+            } catch (InterruptedException e) {
+                System.err.println("Printer thread interrupted: " + e.getMessage());
+            }
+        }
 
     }
 
