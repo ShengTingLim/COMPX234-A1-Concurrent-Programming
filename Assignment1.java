@@ -69,7 +69,7 @@ class Assignment1 {
                 // Simulate printer taking some time to print the document
                 printerSleep();
                 // Grab the request at the head of the queue and print it
-                // Write code here
+                printDox(printerID);
             }
         }
 
@@ -104,7 +104,7 @@ class Assignment1 {
                 // machine sleeps for a random amount of time
                 machineSleep();
                 // machine wakes up and sends a print request
-                // Write code here
+                printRequest(machineID);
             }
         }
 
