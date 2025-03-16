@@ -56,13 +56,17 @@ class Assignment1 {
             machine.start();
         }
 
-       
-
         // let the simulation run for some time
         sleep(SIMULATION_TIME);
 
         // finish simulation
         sim_active = false;
+
+        // Release all semaphores to unblock any waiting threads
+        for (int i = 0; i < QUEUE_SIZE; i++) {
+            emptySlots.release();
+            fullSlots.release();
+        }
 
         // Wait until all printer threads finish by using the join function
         for (Thread printer : pThreads) {
@@ -72,7 +76,6 @@ class Assignment1 {
                 System.err.println("Printer thread interrupted: " + e.getMessage());
             }
         }
-
     }
 
     // Printer class
@@ -106,6 +109,10 @@ class Assignment1 {
             try {
                 // Wait for an available item to print
                 fullSlots.acquire(); 
+                if (!sim_active) {
+                    fullSlots.release();
+                    return;
+                }
                 // Wait for access to the queue
                 queueMutex.acquire(); 
 
@@ -121,7 +128,6 @@ class Assignment1 {
                 System.out.println("PrintDox Interrupted");
             }
         }
-
     }
 
     // Machine class
@@ -156,6 +162,10 @@ class Assignment1 {
             try {
                 // Wait for an available slot
                 emptySlots.acquire(); 
+                if (!sim_active) {
+                    emptySlots.release();
+                    return;
+                }
                 // Wait for access to the queue
                 queueMutex.acquire(); 
                 
