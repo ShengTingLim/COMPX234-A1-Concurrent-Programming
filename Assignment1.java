@@ -15,6 +15,12 @@ class Assignment1 {
     // Create an empty list of print requests
     printList list = new printList();
 
+    // Semaphores for synchronization
+
+    // The queueMutex semaphore ensures mutual exclusion for accessing the printList
+    // Only one thread can access the queue at a time
+    private final Semaphore queueMutex = new Semaphore(1);
+    
     // The emptySlots semaphore is used to block the machine threads when the queue is full
     // Represents the number of requests currently in the queue
     private final Semaphore emptySlots = new Semaphore(QUEUE_SIZE);
@@ -98,13 +104,17 @@ class Assignment1 {
 
         public void printDox(int printerID) {
             try {
-                // Wait for an available item
+                // Wait for an available item to print
                 fullSlots.acquire(); 
+                // Wait for access to the queue
+                queueMutex.acquire(); 
 
                 System.out.println("Printer ID:" + printerID + " : now available");
                 // print from the queue
                 list.queuePrint(list, printerID);
 
+                // Release access to the queue
+                queueMutex.release(); 
                 // Release semaphore slot to allow other another machine to send request
                 emptySlots.release(); 
             } catch (InterruptedException e) {
@@ -146,13 +156,17 @@ class Assignment1 {
             try {
                 // Wait for an available slot
                 emptySlots.acquire(); 
-
+                // Wait for access to the queue
+                queueMutex.acquire(); 
+                
                 System.out.println("Machine " + id + " Sent a print request");
                 // Build a print document
                 printDoc doc = new printDoc("My name is machine " + id, id);
                 // Insert it in print queue
                 list = list.queueInsert(list, doc);
 
+                // Release access to the queue
+                queueMutex.release();
                 // Release semaphore slot to signal that a request is available
                 fullSlots.release(); 
             } catch (InterruptedException e) {
