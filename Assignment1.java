@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 
 class Assignment1 {
 
@@ -8,10 +9,20 @@ class Assignment1 {
     private static int SIMULATION_TIME = 30;
     private static int MAX_PRINTER_SLEEP = 3;
     private static int MAX_MACHINE_SLEEP = 5;
+    private static int QUEUE_SIZE = 5;
     private static boolean sim_active = true;
 
     // Create an empty list of print requests
     printList list = new printList();
+
+    // The emptySlots semaphore is used to block the machine threads when the queue is full
+    // Represents the number of requests currently in the queue
+    private final Semaphore emptySlots = new Semaphore(QUEUE_SIZE);
+
+    // The fullSlots semaphore is used to block the printer threads when the queue is empty
+    // Represents the number of requests to be printed
+    // Starts at 0 to ensure that printers do not try to print from an empty queue
+    private final Semaphore fullSlots = new Semaphore(0);
 
     public void startSimulation() {
 
@@ -31,13 +42,15 @@ class Assignment1 {
         }
 
         // start all the threads
+        for (Thread printer : pThreads) {
+            printer.start();
+        }
+
         for (Thread machine : mThreads) {
             machine.start();
         }
 
-        for (Thread printer : pThreads) {
-            printer.start();
-        }
+       
 
         // let the simulation run for some time
         sleep(SIMULATION_TIME);
@@ -84,9 +97,19 @@ class Assignment1 {
         }
 
         public void printDox(int printerID) {
-            System.out.println("Printer ID:" + printerID + " : now available");
-            // print from the queue
-            list.queuePrint(list, printerID);
+            try {
+                // Wait for an available item
+                fullSlots.acquire(); 
+
+                System.out.println("Printer ID:" + printerID + " : now available");
+                // print from the queue
+                list.queuePrint(list, printerID);
+
+                // Release semaphore slot to allow other another machine to send request
+                emptySlots.release(); 
+            } catch (InterruptedException e) {
+                System.out.println("PrintDox Interrupted");
+            }
         }
 
     }
@@ -120,11 +143,21 @@ class Assignment1 {
         }
 
         public void printRequest(int id) {
-            System.out.println("Machine " + id + " Sent a print request");
-            // Build a print document
-            printDoc doc = new printDoc("My name is machine " + id, id);
-            // Insert it in print queue
-            list = list.queueInsert(list, doc);
+            try {
+                // Wait for an available slot
+                emptySlots.acquire(); 
+
+                System.out.println("Machine " + id + " Sent a print request");
+                // Build a print document
+                printDoc doc = new printDoc("My name is machine " + id, id);
+                // Insert it in print queue
+                list = list.queueInsert(list, doc);
+
+                // Release semaphore slot to signal that a request is available
+                fullSlots.release(); 
+            } catch (InterruptedException e) {
+                System.out.println("PrintRequest Interrupted");
+            }
         }
     }
 
