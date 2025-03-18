@@ -56,7 +56,10 @@ class Assignment1 {
             machine.start();
         }
 
-        // let the simulation run for some time
+        // let the simulation run for some time is machine " + id, id);
+                // Insert it in print queue
+                list = list.queueInsert(list, doc);
+
         sleep(SIMULATION_TIME);
 
         // finish simulation
